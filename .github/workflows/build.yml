@@ -6,6 +6,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Нужно для создания релизов
+      packages: write
+      actions: write
     
     steps:
     - uses: actions/checkout@v3
@@ -20,10 +24,33 @@ jobs:
         mkdir -p builds
         GOOS=android GOARCH=arm64 go build -o builds/proxify-android-arm64
         GOOS=android GOARCH=arm go build -o builds/proxify-android-arm
-        # Создаем архив для удобства скачивания
         cd builds
         tar czf proxify-android-builds.tar.gz proxify-android-*
-        echo "Builds completed and archived in proxify-android-builds.tar.gz"
-        # Выводим размер и содержимое для проверки
-        ls -lh
-        sha256sum proxify-android-builds.tar.gz
+        sha256sum proxify-android-builds.tar.gz > SHA256SUMS.txt
+        
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: proxify-android-binaries
+        path: builds/
+        retention-days: 5
+
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v0.0.${{ github.run_number }}
+        name: Release ${{ github.run_number }}
+        draft: false
+        prerelease: false
+        files: |
+          builds/proxify-android-builds.tar.gz
+          builds/SHA256SUMS.txt
+        body: |
+          Automated release from GitHub Actions
+          
+          Contains:
+          - Android ARM64 binary
+          - Android ARM binary
+          
+          SHA256 checksums included in SHA256SUMS.txt
