@@ -1,7 +1,7 @@
 name: Build Proxify
 
 on: 
-  workflow_dispatch:  # Это позволит запускать вручную из интерфейса
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,20 +13,17 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.24'
+        go-version: '1.21'
         
-    - name: Build for Android ARM64
+    - name: Build for Android
       run: |
-        GOOS=android GOARCH=arm64 go build -o proxify-android-arm64
-        
-    - name: Build for Android ARM
-      run: |
-        GOOS=android GOARCH=arm go build -o proxify-android-arm
-        
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: proxify-binaries
-        path: |
-          proxify-android-arm64
-          proxify-android-arm
+        mkdir -p builds
+        GOOS=android GOARCH=arm64 go build -o builds/proxify-android-arm64
+        GOOS=android GOARCH=arm go build -o builds/proxify-android-arm
+        # Создаем архив для удобства скачивания
+        cd builds
+        tar czf proxify-android-builds.tar.gz proxify-android-*
+        echo "Builds completed and archived in proxify-android-builds.tar.gz"
+        # Выводим размер и содержимое для проверки
+        ls -lh
+        sha256sum proxify-android-builds.tar.gz
